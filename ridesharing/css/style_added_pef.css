@@ -1,0 +1,74 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #eef6fb;
+    margin: 0;
+    padding: 0;
+}
+
+.preference-container {
+    padding: 40px;
+}
+
+.preference-container h1 {
+    font-size: 2.2rem;
+    margin-bottom: 30px;
+    font-weight: 700;
+    color: #1c1c1c;
+}
+
+.preference-box {
+    display: inline-block;
+    width: 300px;
+    border: 2px solid #00acc1;
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    vertical-align: top;
+    transition: transform 0.2s;
+}
+
+.preference-box:hover {
+    transform: translateY(-4px);
+}
+
+.preference-box h3 {
+    color: #0077c2;
+    margin-top: 0;
+}
+
+.match-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 10px 15px;
+    border: 2px solid #c3e6cb;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-top: 12px;
+    display: inline-block;
+}
+
+.add-preference-wrapper {
+    margin-top: 50px;
+    text-align: center;
+}
+
+.add-preference-btn {
+    display: inline-block;
+    padding: 14px 28px;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    border-radius: 50px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.add-preference-btn:hover {
+    background: linear-gradient(to right, #2575fc, #6a11cb);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
