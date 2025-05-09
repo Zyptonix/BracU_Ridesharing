@@ -16,7 +16,7 @@ function sendMail($to, $subject, $body) {
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
                 $mail->Username = 'nszarif522@gmail.com';
-                $mail->Password = 'exlt lfxk otpa noxj';
+                $mail->Password = '';
                 $mail->SMTPSecure = 'tls';
                 $mail->Port = 587;
 
