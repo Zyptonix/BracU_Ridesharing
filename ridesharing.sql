@@ -259,7 +259,6 @@ ALTER TABLE `ride_cards`
 --
 ALTER TABLE `ride_preferences`
   ADD PRIMARY KEY (`preference_id`),
-  ADD UNIQUE KEY `student_id` (`student_id`);
 
 --
 -- Indexes for table `selected_passengers`
