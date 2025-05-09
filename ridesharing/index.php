@@ -7,14 +7,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $brac_mail = trim($_POST['brac_mail']);
     $password = $_POST['password'];
 
-    // Admin shortcut login (check this before anything else)
+    // Admin shortcut login 
     if ($brac_mail === 'admin@bracu.ac.bd' && $password === 'admin') {
         $_SESSION['admin'] = true;
         header("Location: dashboard.php");
         exit;
     }
 
-    // Only validate if not admin
+    // validation after admin check
     if (!preg_match('/@((g\.)?bracu\.ac\.bd)$/', $brac_mail)) {
         $message = "❌ Invalid BRAC email address.";
     } else {
