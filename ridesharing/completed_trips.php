@@ -37,14 +37,22 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 
-// Fetch user info
+
+// Fetch user info for nav bar
 $user_id = $_SESSION['student_id'];
-$query = "SELECT * FROM users WHERE student_id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result1 = $stmt->get_result();
-$user = $result1->fetch_assoc();
+$nav_query = "SELECT * FROM users WHERE student_id = ?";
+$nav_stmt = $conn->prepare($nav_query);
+$nav_stmt->bind_param("i", $user_id);
+$nav_stmt->execute();
+$nav_result = $nav_stmt->get_result();
+$nav_user = $nav_result->fetch_assoc();
+
+// Handle logout request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: index.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -115,13 +123,8 @@ $user = $result1->fetch_assoc();
     }
 
     .creator {
-        color: green;
+        color: darkblue;
         font-weight: bold;
-    }
-
-    .passenger {
-        color: #333;
-        font-style: italic;
     }
 
     a.back-link {
@@ -137,6 +140,7 @@ $user = $result1->fetch_assoc();
 </head>
 <body>
 
+   
     <nav>
     <div class="nav-left">
         <a href="home.php">Home</a>
@@ -144,20 +148,18 @@ $user = $result1->fetch_assoc();
         <a href="profile.php">Profile</a>
         <a href="your_trips.php">Your Trips</a>
         <a href="select_chat.php">Chats</a>
-        <a href="wishlist.php">Wishlist</a>
-        <a href="added_preferences.php">Preferances</a>
+        <a href="added_preferences.php">Preferences</a>
         <a href="completed_trips.php">Completed Trips</a>
-        
     </div>
     <div class="nav-right">
         <a class="nav-btn" href="comment.php">Feedback</a>
         <button class="user-btn" onclick="toggleUserCard()">
-        👤 <?php echo htmlspecialchars($user['Name']); ?> ▼
+        👤 <?php echo htmlspecialchars($nav_user['Name']); ?> ▼
         </button>
         <div class="user-dropdown" id="userCard">
-            <strong>Name:</strong> <?php echo htmlspecialchars($user['Name']); ?><br>
-            <strong>ID:</strong> <?php echo htmlspecialchars($user['Student_id']); ?><br>
-            <strong>Email:</strong> <?php echo htmlspecialchars($user['Brac_mail']); ?><br>
+            <strong>Name:</strong> <?php echo htmlspecialchars($nav_user['Name']); ?><br>
+            <strong>ID:</strong> <?php echo htmlspecialchars($nav_user['Student_id']); ?><br>
+            <strong>Email:</strong> <?php echo htmlspecialchars($nav_user['Brac_mail']); ?><br>
         <a href="profile.php">Manage Account</a>
         <form method="POST" style="margin-top: 10px;">
             <input type="hidden" name="logout" value="1">
@@ -168,7 +170,7 @@ $user = $result1->fetch_assoc();
         </div>
     </div>
     </nav>
-
+    
     <h1>✅ Completed Trips</h1>
     <table>
         <thead>
@@ -190,9 +192,7 @@ $user = $result1->fetch_assoc();
                     <td><?= htmlspecialchars($row['Pickup_time']) ?></td>
                     <td><?= htmlspecialchars($row['Gender']) ?></td>
                     <td><?= htmlspecialchars($row['Semester']) ?></td>
-                    <td class="<?= strtolower($row['role']) ?>">
-                        <?= $row['role'] ?>
-                    </td>
+                    <td class="creator"><?= $row['role'] ?></td>
                 </tr>
             <?php endwhile; ?>
         <?php else: ?>
