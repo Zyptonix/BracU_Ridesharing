@@ -49,6 +49,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<script>alert('❌ Error updating ride.');</script>";
     }
 }
+
+// Fetch user info for nav bar
+$user_id = $_SESSION['student_id'];
+$nav_query = "SELECT * FROM users WHERE student_id = ?";
+$nav_stmt = $conn->prepare($nav_query);
+$nav_stmt->bind_param("i", $user_id);
+$nav_stmt->execute();
+$nav_result = $nav_stmt->get_result();
+$nav_user = $nav_result->fetch_assoc();
+
+// Handle logout request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: index.php");
+    exit();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -60,36 +77,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 
-<h1>Edit Ride</h1>
-<form method="POST">
-    <label>Pickup Area:</label>
-    <input type="text" name="pickup_area" value="<?php echo htmlspecialchars($ride['Pickup_Area']); ?>" required>
+    <nav>
+    <div class="nav-left">
+        <a href="home.php">Home</a>
+        <a href="ride.php">Available Rides</a>
+        <a href="profile.php">Profile</a>
+        <a href="your_trips.php">Your Trips</a>
+        <a href="select_chat.php">Chats</a>
+        <a href="added_preferences.php">Preferences</a>
+        <a href="completed_trips.php">Completed Trips</a>
+    </div>
+    <div class="nav-right">
+        <a class="nav-btn" href="comment.php">Feedback</a>
+        <button class="user-btn" onclick="toggleUserCard()">
+        👤 <?php echo htmlspecialchars($nav_user['Name']); ?> ▼
+        </button>
+        <div class="user-dropdown" id="userCard">
+            <strong>Name:</strong> <?php echo htmlspecialchars($nav_user['Name']); ?><br>
+            <strong>ID:</strong> <?php echo htmlspecialchars($nav_user['Student_id']); ?><br>
+            <strong>Email:</strong> <?php echo htmlspecialchars($nav_user['Brac_mail']); ?><br>
+        <a href="profile.php">Manage Account</a>
+        <form method="POST" style="margin-top: 10px;">
+            <input type="hidden" name="logout" value="1">
+            <button type="submit" style="background: none; border: none; color: red; font-weight: bold; cursor: pointer;text-align:left;">
+                Logout
+            </button>
+        </form>
+        </div>
+    </div>
+    </nav>
 
-    <label>Pickup Time:</label>
-    <input type="time" name="pickup_time" value="<?php echo htmlspecialchars($ride['Pickup_time']); ?>" required>
+    <div class="container">
+        <h1>Edit Ride</h1>
+        <form method="POST">
+            <label>Pickup Area:</label>
+            <input type="text" name="pickup_area" value="<?php echo htmlspecialchars($ride['Pickup_Area']); ?>" required>
 
-    <label>Timeslot:</label>
-    <select name="timeslot" required>
-        <option value="Morning" <?php if ($ride['Timeslot'] === 'Morning') echo 'selected'; ?>>Morning</option>
-        <option value="Afternoon" <?php if ($ride['Timeslot'] === 'Afternoon') echo 'selected'; ?>>Afternoon</option>
-        <option value="Evening" <?php if ($ride['Timeslot'] === 'Evening') echo 'selected'; ?>>Evening</option>
-    </select>
+            <label>Pickup Time:</label>
+            <input type="time" name="pickup_time" value="<?php echo htmlspecialchars($ride['Pickup_time']); ?>" required>
 
-    <label>Number of Empty Seats:</label>
-    <input type="number" name="seats" value="<?php echo $ride['Number_of_empty_seats']; ?>" required min="1">
+            <label>Timeslot:</label>
+            <select name="timeslot" required>
+                <option value="Morning" <?php if ($ride['Timeslot'] === 'Morning') echo 'selected'; ?>>Morning</option>
+                <option value="Afternoon" <?php if ($ride['Timeslot'] === 'Afternoon') echo 'selected'; ?>>Afternoon</option>
+                <option value="Evening" <?php if ($ride['Timeslot'] === 'Evening') echo 'selected'; ?>>Evening</option>
+            </select>
 
-    <label>Gender Preference:</label>
-    <select name="gender" required>
-        <option value="Male" <?php if ($ride['Gender'] === 'Male') echo 'selected'; ?>>Male</option>
-        <option value="Female" <?php if ($ride['Gender'] === 'Female') echo 'selected'; ?>>Female</option>
-        <option value="Both" <?php if ($ride['Gender'] === 'Both') echo 'selected'; ?>>Both</option>
-    </select>
+            <label>Number of Empty Seats:</label>
+            <input type="number" name="seats" value="<?php echo $ride['Number_of_empty_seats']; ?>" required min="1">
 
-    <label>Maximum Semester Allowed:</label>
-    <input type="number" name="semester" value="<?php echo $ride['Semester']; ?>" required min="1">
+            <label>Gender Preference:</label>
+            <select name="gender" required>
+                <option value="Male" <?php if ($ride['Gender'] === 'Male') echo 'selected'; ?>>Male</option>
+                <option value="Female" <?php if ($ride['Gender'] === 'Female') echo 'selected'; ?>>Female</option>
+                <option value="Both" <?php if ($ride['Gender'] === 'Both') echo 'selected'; ?>>Both</option>
+            </select>
 
-    <button type="submit"class="submit-btn">Save Changes</button>
-</form>
+            <label>Maximum Semester Allowed:</label>
+            <input type="number" name="semester" value="<?php echo $ride['Semester']; ?>" required min="1">
 
+            <button type="submit"class="submit-btn">Save Changes</button>
+        </form>
+    </div>
 </body>
 </html>
