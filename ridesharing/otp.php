@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_SESSION['otp_sent_time'])) 
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
         $mail->Username = 'nszarif522@gmail.com'; // replace with yours
-        $mail->Password = 'exlt lfxk otpa noxj';    // replace with Gmail app password
+        $mail->Password = '';    // replace with Gmail app password
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
 
