@@ -15,7 +15,7 @@ $query = "SELECT * FROM users WHERE Student_id = '$student_id'";
 $result = $conn->query($query);
 
 
-$studentId = $_SESSION['student_id']; // Adjust if you use a different variable
+$studentId = $_SESSION['student_id']; 
 
 
 
