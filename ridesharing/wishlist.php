@@ -40,7 +40,12 @@ $user = $result1->fetch_assoc();
     <meta charset="UTF-8">
     <title>Your Wishlist</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/style_wishlist.css">
+    <style>
+        .submit-btn {
+            padding: 8px;
+        }
+    </style>
+
 </head>
 <body>
 
@@ -90,11 +95,11 @@ $user = $result1->fetch_assoc();
                 <p><strong>Pickup Date:</strong> <?= htmlspecialchars($ride['Pickup_date']) ?></p>
                 <form method="post">
                     <input type="hidden" name="remove_card_no" value="<?= $ride['Card_no'] ?>">
-                    <button type="submit">❌ Remove</button>
+                    <button type="submit" class="submit-btn">❌ Remove</button>
                 </form>
                 <form action="ride_cards.php" method="get" style="margin-top: 10px;">
                     <input type="hidden" name="card_no" value="<?= $ride['Card_no'] ?>">
-                    <button type="submit" class="view-button">🔍 View Details</button>
+                    <button type="submit" class="submit-btn">🔍 View Details</button>
                 </form>
             </div>
         <?php endwhile; ?>
