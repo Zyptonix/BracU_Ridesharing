@@ -40,14 +40,6 @@ if ($passenger_result && $passenger_result->num_rows > 0) {
     die("Passenger details not found.");
 }
 
-// Fetch user info
-$query = "SELECT * FROM users WHERE student_id = ?";
-$user_stmt = $conn->prepare($query);
-$user_stmt->bind_param("i", $passenger_id);
-$user_stmt->execute();
-$user_result = $user_stmt->get_result();
-$user = $user_result->fetch_assoc();
-
 // Check if already applied
 $check_stmt = $conn->prepare("SELECT 1 FROM applies_for WHERE Passenger_student_id = ? AND Card_no = ? AND Provider_student_id = ?");
 $check_stmt->bind_param("iii", $passenger_id, $ride_card_no, $ride['Student_id']);
@@ -68,6 +60,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply']) && !$already
         echo "<script>alert('❌ Error applying: " . $conn->error . "');</script>";
     }
 }
+
+// Fetch user info for nav bar
+$user_id = $_SESSION['student_id'];
+$nav_query = "SELECT * FROM users WHERE student_id = ?";
+$nav_stmt = $conn->prepare($nav_query);
+$nav_stmt->bind_param("i", $user_id);
+$nav_stmt->execute();
+$nav_result = $nav_stmt->get_result();
+$nav_user = $nav_result->fetch_assoc();
+
+// Handle logout request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: index.php");
+    exit();
+}
+
+
 ?>
 
 <!DOCTYPE html>
@@ -86,26 +96,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply']) && !$already
 </head>
 <body>
 
-<nav>
-    <div class="nav-left">
-        <a href="home.php">Home</a>
-        <a href="ride.php">Available Rides</a>
-        <a href="profile.php">Profile</a>
-        <a href="your_trips.php">Your Trips</a>
-        <a href="select_chat.php">Chats</a>
-        <a href="wishlist.php">Wishlist</a>
-        <a href="preferance.php">Preferances</a>
-        <a href="completed_trips.php">Completed Trips</a>
-     </div>
-    <div class="nav-right">
-        <a class="nav-btn" href="comment.php">Feedback</a>
-        <button class="user-btn" onclick="toggleUserCard()">
-            👤 <?php echo htmlspecialchars($user['Name']); ?> ▼
-        </button>
-        <div class="user-dropdown" id="userCard">
-            <strong>Name:</strong> <?php echo htmlspecialchars($user['Name']); ?><br>
-            <strong>ID:</strong> <?php echo htmlspecialchars($user['Student_id']); ?><br>
-            <strong>Email:</strong> <?php echo htmlspecialchars($user['Brac_mail']); ?><br>
+    <nav>
+        <div class="nav-left">
+            <a href="home.php">Home</a>
+            <a href="ride.php">Available Rides</a>
+            <a href="profile.php">Profile</a>
+            <a href="your_trips.php">Your Trips</a>
+            <a href="select_chat.php">Chats</a>
+            <a href="wishlist.php">Wishlist</a>     
+            <a href="added_preferences.php">Preferances</a>
+            <a href="completed_trips.php">Completed Trips</a>
+        </div>
+        <div class="nav-right">
+            <a class="nav-btn" href="comment.php">Feedback</a>
+            <button class="user-btn" onclick="toggleUserCard()">
+            👤 <?php echo htmlspecialchars($nav_user['Name']); ?> ▼
+            </button>
+            <div class="user-dropdown" id="userCard">
+                <strong>Name:</strong> <?php echo htmlspecialchars($nav_user['Name']); ?><br>
+                <strong>ID:</strong> <?php echo htmlspecialchars($nav_user['Student_id']); ?><br>
+                <strong>Email:</strong> <?php echo htmlspecialchars($nav_user['Brac_mail']); ?><br>
             <a href="profile.php">Manage Account</a>
             <form method="POST" style="margin-top: 10px;">
                 <input type="hidden" name="logout" value="1">
@@ -113,10 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['apply']) && !$already
                     Logout
                 </button>
             </form>
+            </div>
         </div>
-    </div>
-</nav>
-
+    </nav>
 <div class="container">
     <h1>Ride Details</h1>
 
