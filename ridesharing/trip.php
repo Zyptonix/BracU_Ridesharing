@@ -24,22 +24,15 @@ $selected_query = "SELECT * FROM selected_passengers WHERE Card_no='$card_no' AN
 $selected_result = $conn->query($selected_query);
 $is_passenger = ($selected_result->num_rows > 0);
 
-// ✅ NEW: Check if user has a trip entry
-$trip_check_query = "SELECT * FROM trips WHERE Card_no='$card_no' AND Student_id='$student_id1'";
-$trip_check_result = $conn->query($trip_check_query);
-$has_trip = ($trip_check_result->num_rows > 0);
-
-// ✅ Updated access check
-if (!$is_creator && !$is_passenger && !$has_trip) {
+// Access check
+if (!$is_creator && !$is_passenger) {
     die("Unauthorized access.");
 }
 
 
-// Check if trip exists for this user
+// Select trip for this user
 $trip_query = "SELECT * FROM trips WHERE Card_no='$card_no'";
 $trip_result = $conn->query($trip_query);
-
-
 $trip = $trip_result->fetch_assoc();
 $student_id = $trip['Student_id'];
 $trip_id = $trip['Trip_id'];
