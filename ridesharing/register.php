@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($insert) {
                 // Redirect to login page (index.php) after successful registration
                 header("Location: index.php");
-                exit(); // Make sure the script stops here after redirection
+                exit(); 
             } else {
                 $message = "❌ Error: " . $conn->error;
             }
