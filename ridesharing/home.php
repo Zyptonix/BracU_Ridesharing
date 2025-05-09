@@ -2,6 +2,21 @@
 session_start();
 require_once("DBconnect.php"); // your DB connection
 
+// Redirect if not logged in
+if (!isset($_SESSION['student_id'])) {
+    header("Location: index.php");
+    exit();
+}
+
+// Fetch user info for nav bar
+$user_id = $_SESSION['student_id'];
+$nav_query = "SELECT * FROM users WHERE student_id = ?";
+$nav_stmt = $conn->prepare($nav_query);
+$nav_stmt->bind_param("i", $user_id);
+$nav_stmt->execute();
+$nav_result = $nav_stmt->get_result();
+$nav_user = $nav_result->fetch_assoc();
+
 // Handle logout request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     session_destroy();
@@ -9,20 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     exit();
 }
 
-// Redirect if not logged in
-if (!isset($_SESSION['student_id'])) {
-    header("Location: index.php");
-    exit();
-}
-
-// Fetch user info
-$user_id = $_SESSION['student_id'];
-$query = "SELECT * FROM users WHERE student_id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
 ?>
 
 
@@ -51,12 +52,12 @@ $user = $result->fetch_assoc();
   <div class="nav-right">
     <a class="nav-btn" href="comment.php">Feedback</a>
     <button class="user-btn" onclick="toggleUserCard()">
-    👤 <?php echo htmlspecialchars($user['Name']); ?> ▼
+    👤 <?php echo htmlspecialchars($nav_user['Name']); ?> ▼
     </button>
     <div class="user-dropdown" id="userCard">
-        <strong>Name:</strong> <?php echo htmlspecialchars($user['Name']); ?><br>
-        <strong>ID:</strong> <?php echo htmlspecialchars($user['Student_id']); ?><br>
-        <strong>Email:</strong> <?php echo htmlspecialchars($user['Brac_mail']); ?><br>
+        <strong>Name:</strong> <?php echo htmlspecialchars($nav_user['Name']); ?><br>
+        <strong>ID:</strong> <?php echo htmlspecialchars($nav_user['Student_id']); ?><br>
+        <strong>Email:</strong> <?php echo htmlspecialchars($nav_user['Brac_mail']); ?><br>
     <a href="profile.php">Manage Account</a>
     <form method="POST" style="margin-top: 10px;">
         <input type="hidden" name="logout" value="1">
