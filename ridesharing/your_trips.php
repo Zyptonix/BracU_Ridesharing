@@ -1,56 +1,55 @@
 <?php
 session_start();
 require_once("DBConnect.php");
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selection'])) {
-    $card_no = intval($_POST['card_no']);
-    $student_id = $_SESSION['student_id'];
-
-    // Remove from selected_passengers
-    $stmt = $conn->prepare("DELETE FROM selected_passengers WHERE Passenger_student_id = ? AND Card_no = ?");
-    $stmt->bind_param("ii", $student_id, $card_no);
-    $stmt->execute();
-
-    // Increase seat count
-    $stmt2 = $conn->prepare("UPDATE ride_cards SET Number_of_empty_seats = Number_of_empty_seats + 1 WHERE Card_no = ?");
-    $stmt2->bind_param("i", $card_no);
-    $stmt2->execute();
-
-    $message = "Application removed successfully.";
-}
+$student_id = $_SESSION['student_id'];
 
 if (!isset($_SESSION['student_id'])) {
     header("Location: login.php");
     exit();
 }
 
-$student_id = $_SESSION['student_id'];
-
-
 // Applied rides (not yet selected)
-$sql = "SELECT rc.*, u.Name AS Provider_Name, u.Brac_mail 
+$applied_sql = "SELECT rc.*, u.Name AS Provider_Name, u.Brac_mail 
         FROM ride_cards rc
         JOIN applies_for ap ON rc.Card_no = ap.Card_no
         JOIN users u ON rc.Student_id = u.Student_id
         LEFT JOIN trips t ON rc.Card_no = t.Card_no
         WHERE ap.Passenger_student_id = ? AND (t.Is_completed IS NULL OR t.Is_completed = 0)";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $student_id);
-$stmt->execute();
-$result = $stmt->get_result();
+$applied_stmt = $conn->prepare($applied_sql);
+$applied_stmt->bind_param("i", $student_id);
+$applied_stmt->execute();
+$applied_result = $applied_stmt->get_result();
 
 
-// Selected rides (as passenger)
-$sql1 = "SELECT r.* 
+// Selected for rides (as passenger)
+$selected_sql = "SELECT r.* 
     FROM selected_passengers s
     JOIN ride_cards r ON s.Card_no = r.Card_no
     LEFT JOIN trips t ON r.Card_no = t.Card_no
     WHERE s.Passenger_student_id = ? AND (t.Is_completed IS NULL OR t.Is_completed = 0)
 ";
-$stmt = $conn->prepare($sql1);
-$stmt->bind_param("i", $student_id);
-$stmt->execute();
-$result1 = $stmt->get_result();
+$selected_stmt = $conn->prepare($selected_sql);
+$selected_stmt->bind_param("i", $student_id);
+$selected_stmt->execute();
+$selected_result = $selected_stmt->get_result();
+
+// Remove from selected_passengers table
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_selection'])) {
+    $card_no = intval($_POST['card_no']);
+    $student_id = $_SESSION['student_id'];
+
+    // Remove from selected_passengers
+    $delete_stmt = $conn->prepare("DELETE FROM selected_passengers WHERE Passenger_student_id = ? AND Card_no = ?");
+    $delete_stmt->bind_param("ii", $student_id, $card_no);
+    $delete_stmt->execute();
+
+    // Increase seat count
+    $increase_stmt = $conn->prepare("UPDATE ride_cards SET Number_of_empty_seats = Number_of_empty_seats + 1 WHERE Card_no = ?");
+    $increase_stmt->bind_param("i", $card_no);
+    $increase_stmt->execute();
+
+    $message = "Application removed successfully.";
+}
 
 // Rides created by this student
 $created_query = "SELECT * FROM trips  
@@ -64,15 +63,24 @@ $created_stmt->bind_param("i", $student_id);
 $created_stmt->execute();
 $created_rides = $created_stmt->get_result();
 
-// Fetch user info
-$user_id = $_SESSION['student_id'];
-$query = "SELECT * FROM users WHERE student_id = ?";
-$stmt2 = $conn->prepare($query);
-$stmt2->bind_param("i", $user_id);
-$stmt2->execute();
-$result3 = $stmt2->get_result();
-$user = $result3->fetch_assoc();
 
+
+// Fetch user info for nav bar
+$user_id = $_SESSION['student_id'];
+$nav_query = "SELECT * FROM users WHERE student_id = ?";
+$nav_stmt = $conn->prepare($nav_query);
+$nav_stmt->bind_param("i", $user_id);
+$nav_stmt->execute();
+$nav_result = $nav_stmt->get_result();
+$nav_user = $nav_result->fetch_assoc();
+
+// Handle logout request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: index.php");
+    exit();
+}
+    
 ?>
 
 <!DOCTYPE html>
@@ -181,12 +189,12 @@ $user = $result3->fetch_assoc();
   <div class="nav-right">
     <a class="nav-btn" href="comment.php">Feedback</a>
     <button class="user-btn" onclick="toggleUserCard()">
-    👤 <?php echo htmlspecialchars($user['Name']); ?> ▼
+    👤 <?php echo htmlspecialchars($nav_user['Name']); ?> ▼
     </button>
     <div class="user-dropdown" id="userCard">
-        <strong>Name:</strong> <?php echo htmlspecialchars($user['Name']); ?><br>
-        <strong>ID:</strong> <?php echo htmlspecialchars($user['Student_id']); ?><br>
-        <strong>Email:</strong> <?php echo htmlspecialchars($user['Brac_mail']); ?><br>
+        <strong>Name:</strong> <?php echo htmlspecialchars($nav_user['Name']); ?><br>
+        <strong>ID:</strong> <?php echo htmlspecialchars($nav_user['Student_id']); ?><br>
+        <strong>Email:</strong> <?php echo htmlspecialchars($nav_user['Brac_mail']); ?><br>
     <a href="profile.php">Manage Account</a>
     <form method="POST" style="margin-top: 10px;">
         <input type="hidden" name="logout" value="1">
@@ -208,14 +216,14 @@ $user = $result3->fetch_assoc();
     <div class="column">
         <div class="container">
             <h2>Applied For</h2>
-            <?php if ($result->num_rows === 0): ?>
+            <?php if ($applied_result->num_rows === 0): ?>
                 <p style="text-align: center; font-size: 18px;">You haven’t applied to any rides yet.</p>
             <?php else: ?>
-                <?php while ($row = $result->fetch_assoc()): ?>
+                <?php while ($ride = $applied_result->fetch_assoc()): ?>
                     <div class="card">
-                        <p><strong>Card No:</strong> <?php echo htmlspecialchars($row['Card_no']); ?></p>
-                        <p><strong>Pickup Time:</strong> <?php echo date("g:i A, M j", strtotime($row['Pickup_time'])); ?></p>
-                        <p><strong>Provider:</strong> <?php echo htmlspecialchars($row['Provider_Name']); ?> (<?php echo htmlspecialchars($row['Brac_mail']); ?>)</p>
+                        <p><strong>Card No:</strong> <?php echo htmlspecialchars($ride['Card_no']); ?></p>
+                        <p><strong>Pickup Time:</strong> <?php echo date("g:i A, M j", strtotime($ride['Pickup_time'])); ?></p>
+                        <p><strong>Provider:</strong> <?php echo htmlspecialchars($ride['Provider_Name']); ?> (<?php echo htmlspecialchars($ride['Brac_mail']); ?>)</p>
                         <p><strong>Status:</strong> Pending Review ✅</p>
                     </div>
                 <?php endwhile; ?>
@@ -225,8 +233,8 @@ $user = $result3->fetch_assoc();
     <div class="column">
         <div class="container">
             <h2>Selected For</h2>
-            <?php if ($result1->num_rows > 0): ?>
-                <?php while ($ride = $result1->fetch_assoc()): ?>
+            <?php if ($selected_result->num_rows > 0): ?>
+                <?php while ($ride = $selected_result->fetch_assoc()): ?>
                     <div class="ride-card">
                         <p><strong>Pickup Area:</strong> <?php echo htmlspecialchars($ride['Pickup_Area']); ?></p>
                    
