@@ -9,17 +9,16 @@ if (!isset($_SESSION['student_id'])) {
 
 // Fetch all the rides from the database
 
+
+// Base query
 $query = "
 SELECT r.*
 FROM ride_cards r
 LEFT JOIN trips t ON r.Card_no = t.Card_no AND r.Student_id = t.Student_id
 WHERE t.Is_completed = 0
-ORDER BY r.Pickup_time, r.Number_of_empty_seats
 ";
 
-
-
-
+// Conditions for search
 $conditions = [];
 
 if (!empty($_GET['pickup_area'])) {
@@ -37,15 +36,7 @@ if (!empty($_GET['timeslot_filter'])) {
     $conditions[] = "r.Timeslot = '$timeslot'";
 }
 
-// Base query
-$query = "
-SELECT r.*
-FROM ride_cards r
-LEFT JOIN trips t ON r.Card_no = t.Card_no AND r.Student_id = t.Student_id
-WHERE t.Is_completed = 0
-";
-
-// Add filters
+// Add filter conditions
 if (!empty($conditions)) {
     $query .= " AND " . implode(" AND ", $conditions);
 }
@@ -53,15 +44,8 @@ if (!empty($conditions)) {
 $query .= " ORDER BY r.Pickup_time, r.Number_of_empty_seats";
 $result = $conn->query($query);
 
-// Fetch user info
-$user_id = $_SESSION['student_id'];
-$query = "SELECT * FROM users WHERE student_id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result1 = $stmt->get_result();
-$user = $result1->fetch_assoc();
 
+// Wishlist Functionality
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['wishlist_card_no'])) {
     $card_no = intval($_POST['wishlist_card_no']);
     $passenger_id = $_SESSION['student_id'] ?? null;
@@ -80,6 +64,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['wishlist_card_no'])) 
         }
     }
 }
+
+
+// Fetch user info for nav bar
+$user_id = $_SESSION['student_id'];
+$nav_query = "SELECT * FROM users WHERE student_id = ?";
+$nav_stmt = $conn->prepare($nav_query);
+$nav_stmt->bind_param("i", $user_id);
+$nav_stmt->execute();
+$nav_result = $nav_stmt->get_result();
+$nav_user = $nav_result->fetch_assoc();
+
+// Handle logout request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: index.php");
+    exit();
+}
+
 
 ?>
 
@@ -118,34 +120,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['wishlist_card_no'])) 
 </head>
 <body>
     <nav>
-    <div class="nav-left">
-        <a href="home.php">Home</a>
-        <a href="ride.php">Available Rides</a>
-        <a href="profile.php">Profile</a>
-        <a href="your_trips.php">Your Trips</a>
-        <a href="select_chat.php">Chats</a>
-        <a href="wishlist.php">Wishlist</a>     
-        <a href="added_preferences.php">Preferances</a>
-        <a href="completed_trips.php">Completed Trips</a>
-    </div>
-    <div class="nav-right">
-        <a class="nav-btn" href="comment.php">Feedback</a>
-        <button class="user-btn" onclick="toggleUserCard()">
-        👤 <?php echo htmlspecialchars($user['Name']); ?> ▼
-        </button>
-        <div class="user-dropdown" id="userCard">
-            <strong>Name:</strong> <?php echo htmlspecialchars($user['Name']); ?><br>
-            <strong>ID:</strong> <?php echo htmlspecialchars($user['Student_id']); ?><br>
-            <strong>Email:</strong> <?php echo htmlspecialchars($user['Brac_mail']); ?><br>
-        <a href="profile.php">Manage Account</a>
-        <form method="POST" style="margin-top: 10px;">
-            <input type="hidden" name="logout" value="1">
-            <button type="submit" style="background: none; border: none; color: red; font-weight: bold; cursor: pointer;text-align:left;">
-                Logout
-            </button>
-        </form>
+        <div class="nav-left">
+            <a href="home.php">Home</a>
+            <a href="ride.php">Available Rides</a>
+            <a href="profile.php">Profile</a>
+            <a href="your_trips.php">Your Trips</a>
+            <a href="select_chat.php">Chats</a>
+            <a href="wishlist.php">Wishlist</a>     
+            <a href="added_preferences.php">Preferances</a>
+            <a href="completed_trips.php">Completed Trips</a>
         </div>
-    </div>
+        <div class="nav-right">
+            <a class="nav-btn" href="comment.php">Feedback</a>
+            <button class="user-btn" onclick="toggleUserCard()">
+            👤 <?php echo htmlspecialchars($nav_user['Name']); ?> ▼
+            </button>
+            <div class="user-dropdown" id="userCard">
+                <strong>Name:</strong> <?php echo htmlspecialchars($nav_user['Name']); ?><br>
+                <strong>ID:</strong> <?php echo htmlspecialchars($nav_user['Student_id']); ?><br>
+                <strong>Email:</strong> <?php echo htmlspecialchars($nav_user['Brac_mail']); ?><br>
+            <a href="profile.php">Manage Account</a>
+            <form method="POST" style="margin-top: 10px;">
+                <input type="hidden" name="logout" value="1">
+                <button type="submit" style="background: none; border: none; color: red; font-weight: bold; cursor: pointer;text-align:left;">
+                    Logout
+                </button>
+            </form>
+            </div>
+        </div>
     </nav>
     
     <div class="top-search-bar">
@@ -156,6 +158,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['wishlist_card_no'])) 
                     <option value="Mohammadpur" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Mohammadpur') ? 'selected' : '' ?>>Mohammadpur</option>
                     <option value="Lalmatia" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Lalmatia') ? 'selected' : '' ?>>Lalmatia</option>
                     <option value="Dhanmondi" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Dhanmondi') ? 'selected' : '' ?>>Dhanmondi</option>
+                    <option value="Adabor" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Adabor') ? 'selected' : '' ?>>Adaborr</option>
+                    <option value="Banani" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Banani') ? 'selected' : '' ?>>Banani</option>
+                    <option value="Gulshan-1" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Gulshan-1') ? 'selected' : '' ?>>Gulshan-1</option>
+                    <option value="Baridhara" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Baridhara') ? 'selected' : '' ?>>Baridhara</option>
+                    <option value="Mohakhali" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Mohakhali') ? 'selected' : '' ?>>Mohakhali</option>
+                    <option value="Kuril" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Kuril') ? 'selected' : '' ?>>Kuril</option>
+                    <option value="Azimpur" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Azimpur') ? 'selected' : '' ?>>Azimpur</option>
+                    <option value="Uttara" <?= (isset($_GET['pickup_area']) && $_GET['pickup_area'] == 'Uttara') ? 'selected' : '' ?>>Uttara</option>
                 </select>
             <select name="seats_filter">
                 <option value="">🚗 Min Seats</option>
