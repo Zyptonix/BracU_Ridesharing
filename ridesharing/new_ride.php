@@ -17,12 +17,11 @@ if (!isset($_SESSION['student_id'])) {
 $logged_in_student_id = $_SESSION['student_id'];
 
 // Fetch the user's details to check if they are a car provider
-$sql = "SELECT C_flag, Gender FROM users WHERE Student_id = '$logged_in_student_id' LIMIT 1";
+$sql = "SELECT C_flag FROM users WHERE Student_id = '$logged_in_student_id' LIMIT 1";
 $result = $conn->query($sql);
 
 if ($result && $result->num_rows > 0) {
     $user = $result->fetch_assoc();
-    $creator_gender = $user['Gender']; // Save creator's gender for matching
     if ($user['C_flag'] == 0) {
         die("You must be a car provider to create a ride.");
     }
@@ -75,14 +74,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 }
-// Fetch user info
+
+// Fetch user info for nav bar
 $user_id = $_SESSION['student_id'];
-$query = "SELECT * FROM users WHERE student_id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result1 = $stmt->get_result();
-$user = $result1->fetch_assoc();
+$nav_query = "SELECT * FROM users WHERE student_id = ?";
+$nav_stmt = $conn->prepare($nav_query);
+$nav_stmt->bind_param("i", $user_id);
+$nav_stmt->execute();
+$nav_result = $nav_stmt->get_result();
+$nav_user = $nav_result->fetch_assoc();
+
+// Handle logout request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: index.php");
+    exit();
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,36 +108,36 @@ $user = $result1->fetch_assoc();
 </head>
 <body>
     <nav>
-    <div class="nav-left">
-        <a href="home.php">Home</a>
-        <a href="ride.php">Available Rides</a>
-        <a href="profile.php">Profile</a>
-        <a href="your_trips.php">Your Trips</a>
-        <a href="select_chat.php">Chats</a>
-        <a href="wishlist.php">Wishlist</a>
-        <a href="added_preferences.php">Preferances</a>
-        <a href="completed_trips.php">Completed Trips</a>
-     </div>
-    <div class="nav-right">
-        <a class="nav-btn" href="comment.php">Feedback</a>
-        <button class="user-btn" onclick="toggleUserCard()">
-        👤 <?php echo htmlspecialchars($user['Name']); ?> ▼
-        </button>
-        <div class="user-dropdown" id="userCard">
-            <strong>Name:</strong> <?php echo htmlspecialchars($user['Name']); ?><br>
-            <strong>ID:</strong> <?php echo htmlspecialchars($user['Student_id']); ?><br>
-            <strong>Email:</strong> <?php echo htmlspecialchars($user['Brac_mail']); ?><br>
-        <a href="profile.php">Manage Account</a>
-        <form method="POST" style="margin-top: 10px;">
-            <input type="hidden" name="logout" value="1">
-            <button type="submit" style="background: none; border: none; color: red; font-weight: bold; cursor: pointer;text-align:left;">
-                Logout
-            </button>
-        </form>
+        <div class="nav-left">
+            <a href="home.php">Home</a>
+            <a href="ride.php">Available Rides</a>
+            <a href="profile.php">Profile</a>
+            <a href="your_trips.php">Your Trips</a>
+            <a href="select_chat.php">Chats</a>
+            <a href="wishlist.php">Wishlist</a>     
+            <a href="added_preferences.php">Preferances</a>
+            <a href="completed_trips.php">Completed Trips</a>
         </div>
-    </div>
+        <div class="nav-right">
+            <a class="nav-btn" href="comment.php">Feedback</a>
+            <button class="user-btn" onclick="toggleUserCard()">
+            👤 <?php echo htmlspecialchars($nav_user['Name']); ?> ▼
+            </button>
+            <div class="user-dropdown" id="userCard">
+                <strong>Name:</strong> <?php echo htmlspecialchars($nav_user['Name']); ?><br>
+                <strong>ID:</strong> <?php echo htmlspecialchars($nav_user['Student_id']); ?><br>
+                <strong>Email:</strong> <?php echo htmlspecialchars($nav_user['Brac_mail']); ?><br>
+            <a href="profile.php">Manage Account</a>
+            <form method="POST" style="margin-top: 10px;">
+                <input type="hidden" name="logout" value="1">
+                <button type="submit" style="background: none; border: none; color: red; font-weight: bold; cursor: pointer;text-align:left;">
+                    Logout
+                </button>
+            </form>
+            </div>
+        </div>
     </nav>
-
+    
     <h1>Add New Ride</h1>
 
     <div class="form-container">
@@ -147,7 +155,7 @@ $user = $result1->fetch_assoc();
                     <option value="Dhanmondi">Dhanmondi</option>
                     <option value="Adabor">Adabor</option>
                     <option value="Banani">Banani</option>
-                    <option value="Gulshban-1">Gulshan-1</option>
+                    <option value="Gulshan-1">Gulshan-1</option>
                     <option value="Baridhara">Baridhara</option>
                     <option value="Mohakhali">Mohakhali</option>
                     <option value="Kuril">Kuril</option>
