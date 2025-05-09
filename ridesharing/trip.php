@@ -17,15 +17,15 @@ $card_no = $_GET['card_no'];
 // Check if user is ride creator
 $creator_query = "SELECT * FROM ride_cards WHERE Card_no='$card_no' AND Student_id='$student_id1'";
 $creator_result = $conn->query($creator_query);
-$is_creator = ($creator_result->num_rows > 0);
+$is_provider = $creator_result->num_rows > 0;
 
 // Check if user is a selected passenger
 $selected_query = "SELECT * FROM selected_passengers WHERE Card_no='$card_no' AND Passenger_Student_id='$student_id1'";
 $selected_result = $conn->query($selected_query);
-$is_passenger = ($selected_result->num_rows > 0);
+$is_passenger = $selected_result->num_rows > 0;
 
 // Access check
-if (!$is_creator && !$is_passenger) {
+if (!$is_provider && !$is_passenger) {
     die("Unauthorized access.");
 }
 
@@ -36,7 +36,6 @@ $trip_result = $conn->query($trip_query);
 $trip = $trip_result->fetch_assoc();
 $student_id = $trip['Student_id'];
 $trip_id = $trip['Trip_id'];
-$is_provider = $is_creator;
 // Fetch car details
 $car_query = "SELECT * FROM cars WHERE student_id = '$student_id' LIMIT 1";
 $car_result = $conn->query($car_query);
@@ -81,19 +80,28 @@ $passengers_result = $conn->query($selected_passengers_query);
 $is_completed = $trip['Is_completed'];
 $is_started = $trip['Is_started'];
 
-// Fetch user info
-$user_id = $_SESSION['student_id'];
-$query1 = "SELECT * FROM users WHERE student_id = ?";
-$stmt1 = $conn->prepare($query1);
-$stmt1->bind_param("i", $user_id);
-$stmt1->execute();
-$result1 = $stmt1->get_result();
-$user1 = $result1->fetch_assoc();
-
 if (isset($_POST['return_to_rides'])) {   
      header("Location: ride.php");
     exit();
 }
+
+
+// Fetch user info for nav bar
+$user_id = $_SESSION['student_id'];
+$nav_query = "SELECT * FROM users WHERE student_id = ?";
+$nav_stmt = $conn->prepare($nav_query);
+$nav_stmt->bind_param("i", $user_id);
+$nav_stmt->execute();
+$nav_result = $nav_stmt->get_result();
+$nav_user = $nav_result->fetch_assoc();
+
+// Handle logout request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: index.php");
+    exit();
+}
+
 
 ?>
 
@@ -141,18 +149,18 @@ if (isset($_POST['return_to_rides'])) {
 
 
       /* Trip Summary */
-  .trip-summary {
-    background: #f0f9ff;
-    padding: 20px;
-    margin-bottom: 30px;
-    border-left: 5px solid #3498db;
-    border-radius: 12px;
-  }
-  
-  .trip-summary h2,, .car-details h2 {
-    margin-top: 0;
-    color: #3498db;
-  }
+    .trip-summary {
+        background: #f0f9ff;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-left: 5px solid #3498db;
+        border-radius: 12px;
+    }
+    
+    .trip-summary h2,, .car-details h2 {
+        margin-top: 0;
+        color: #3498db;
+    }
 
   
     .trip-summary, .car-details {
@@ -288,12 +296,12 @@ if (isset($_POST['return_to_rides'])) {
     <div class="nav-right">
         <a class="nav-btn" href="comment.php">Feedback</a>
         <button class="user-btn" onclick="toggleUserCard()">
-        👤 <?php echo htmlspecialchars($user1['Name']); ?> ▼
+        👤 <?php echo htmlspecialchars($nav_user1['Name']); ?> ▼
         </button>
         <div class="user-dropdown" id="userCard">
-            <strong>Name:</strong> <?php echo htmlspecialchars($user1['Name']); ?><br>
-            <strong>ID:</strong> <?php echo htmlspecialchars($user1['Student_id']); ?><br>
-            <strong>Email:</strong> <?php echo htmlspecialchars($user1['Brac_mail']); ?><br>
+            <strong>Name:</strong> <?php echo htmlspecialchars($nav_user['Name']); ?><br>
+            <strong>ID:</strong> <?php echo htmlspecialchars($nav_user['Student_id']); ?><br>
+            <strong>Email:</strong> <?php echo htmlspecialchars($nav_user['Brac_mail']); ?><br>
         <a href="profile.php">Manage Account</a>
         <form method="POST" style="margin-top: 10px;">
             <input type="hidden" name="logout" value="1">
@@ -303,7 +311,7 @@ if (isset($_POST['return_to_rides'])) {
         </form>
         </div>
     </div>
-    </nav>
+</nav>
 
 <div class="container">
     <h1>Manage Trip</h1>
